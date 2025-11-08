@@ -1,0 +1,52 @@
+name: Build Nyxian IPA (Unsigned)
+
+on:
+  workflow_dispatch:  # 手动触发
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Select Xcode
+      run: |
+        sudo xcode-select -switch /Applications/Xcode.app
+        xcodebuild -version
+
+    - name: Build and Archive
+      run: |
+        mkdir -p build
+        xcodebuild \
+          -project Nyxian.xcodeproj \
+          -scheme Nyxian \
+          -sdk iphoneos \
+          -configuration Release \
+          clean archive \
+          -archivePath build/Nyxian.xcarchive
+
+    - name: Export Unsigned IPA
+      run: |
+        cat > ExportOptions.plist <<EOF
+        {
+          "method": "development",
+          "signingStyle": "manual",
+          "compileBitcode": false,
+          "destination": "export",
+          "stripSwiftSymbols": true,
+          "signingCertificate": "Apple Development"
+        }
+        EOF
+
+        xcodebuild -exportArchive \
+          -archivePath build/Nyxian.xcarchive \
+          -exportPath build \
+          -exportOptionsPlist ExportOptions.plist || true
+
+    - name: Upload IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: Nyxian-Unsigned-IPA
+        path: build/*.ipa
