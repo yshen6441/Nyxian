@@ -11,6 +11,12 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+    - name: Create missing config file
+      run: |
+        if [ ! -f "Nyxian/PrivateConfig.xcconfig" ]; then
+          echo "// Auto-generated placeholder for CI" > Nyxian/PrivateConfig.xcconfig
+        fi
+
     - name: Select Xcode
       run: sudo xcode-select -switch /Applications/Xcode.app
 
