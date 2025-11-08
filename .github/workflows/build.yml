@@ -15,15 +15,20 @@ jobs:
       run: |
         sudo xcode-select -switch /Applications/Xcode.app
         xcodebuild -version
-
+        
     - name: Build and Archive
       run: |
-        mkdir -p build
-        xcodebuild \
+         mkdir -p build
+          xcodebuild \
           -project Nyxian.xcodeproj \
           -scheme Nyxian \
           -sdk iphoneos \
           -configuration Release \
+          SWIFT_OPTIMIZATION_LEVEL='-O' \
+          SWIFT_DISABLE_SWIFTUI_PREVIEWS=YES \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
           clean archive \
           -archivePath build/Nyxian.xcarchive
 
