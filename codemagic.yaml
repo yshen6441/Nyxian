@@ -1,0 +1,62 @@
+workflows:
+  build-nyxian:
+    name: Build Nyxian iOS IPA
+    environment:
+      vars:
+        XCODE_WORKSPACE: "Nyxian.xcodeproj"
+        XCODE_SCHEME: "Nyxian"
+        BUNDLE_ID: "com.yshen6441.nyxian"
+      xcode: latest
+      ios_signing:
+        distribution_type: development
+        bundle_identifier: com.yshen6441.nyxian
+
+    scripts:
+      - name: Create missing xcconfig if needed
+        script: |
+          if [ ! -f "PrivateConfig.xcconfig" ]; then
+            echo 'CODE_SIGN_STYLE = Automatic' > PrivateConfig.xcconfig
+            echo 'DEVELOPMENT_TEAM = ""' >> PrivateConfig.xcconfig
+            echo 'PRODUCT_BUNDLE_IDENTIFIER = com.yshen6441.nyxian' >> PrivateConfig.xcconfig
+          fi
+
+      - name: Clean and build with Xcode
+        script: |
+          xcodebuild \
+            -project "$XCODE_WORKSPACE" \
+            -scheme "$XCODE_SCHEME" \
+            -sdk iphoneos \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            clean build
+
+      - name: Package .ipa
+        script: |
+          mkdir -p build/ipa
+          xcodebuild -exportArchive \
+            -archivePath build/$XCODE_SCHEME.xcarchive \
+            -exportPath build/ipa \
+            -exportOptionsPlist <(cat <<EOF
+          {
+            "method": "development",
+            "compileBitcode": false,
+            "signingStyle": "manual",
+            "stripSwiftSymbols": true,
+            "teamID": "",
+            "thinning": "<none>"
+          }
+          EOF
+          )
+          echo "IPA generated at: build/ipa"
+
+    artifacts:
+      - build/ipa/*.ipa
+      - build/**/*.dSYM.zip
+      - build/Logs/**/*.log
+
+    publishing:
+      email:
+        recipients:
+          - your_email@example.com
